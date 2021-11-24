@@ -1,4 +1,4 @@
-use druid::{widget::Label, Widget, WidgetExt, Env, Color, LensExt, EventCtx, Event, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, Size, PaintCtx, RenderContext};
+use druid::{widget::Label, Widget, WidgetExt, Env, Color, LensExt, EventCtx, Event, LifeCycleCtx, LifeCycle, UpdateCtx, LayoutCtx, BoxConstraints, Size, PaintCtx, RenderContext, MouseButton};
 
 use crate::data::*;
 use druid::widget::{Flex, Button, List, Container, Align};
@@ -17,72 +17,22 @@ pub fn build_ui() -> impl Widget<AppState> {
 }
 
 
-#[derive(Clone, Data, Lens)]
-pub struct Cand {
-    values: Vector<IndCand>,
-}
 
-
-impl Index<usize> for Cand {
-    type Output = IndCand;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.values[index]
-    }
-}
-
-impl IndexMut<usize> for Cand {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.values[index]
-    }
-}
-
-
-#[derive(Clone, Data, Lens)]
-pub struct IndCand {
-    value: u8,
-    status: CandStatus,
-
-}
-
-#[derive(Copy, Clone, PartialEq, Data)]
-pub enum CandStatus {
-    Active,
-    Inactive,
-}
-
-
-impl CandStatus {
-    pub fn color(&self) -> Color {
-        match self {
-            CandStatus::Active => Color::BLUE,
-            CandStatus::Inactive => Color::BLACK,
-        }
-    }
-}
-impl Cand {
-    pub fn new () -> Cand {
-        let v: Vec<IndCand> = (1..=9).into_iter().map(|i|
-            if i & 1 > 0 {
-                IndCand::new(i, CandStatus::Active)
-            } else {
-                IndCand::new(i, CandStatus::Inactive)
-            }).collect();
-        Cand {
-            values: v.into(),
-        }
-    }
-}
 
 pub struct CandWidget {
-    label: Label<IndCand>
+    label: Align<IndCand>
 }
 
 impl CandWidget {
     pub fn new () -> CandWidget {
-        let label = Label::new(|data: &IndCand, _:&_| {
-            data.value.to_string()
-        });
+        let label = Align::centered(Label::new(|data: &IndCand, _:&_| {
+            if data.status == Status::Inactive {
+                " ".to_string()
+            }
+            else {
+                data.value.to_string()
+            }
+        }));
         CandWidget {
             label
         }
@@ -91,6 +41,25 @@ impl CandWidget {
 
 impl Widget<IndCand> for CandWidget {
     fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut IndCand, env: &Env) {
+        match event {
+
+            Event::MouseDown(m) => {
+                match m.button {
+                    MouseButton::Left => data.status = Status::Selected,
+                    MouseButton::Right => data.status = Status::Active,
+                    _ => (),
+                }
+            }
+            // Event::MouseUp(_) => {
+            //     dbg!(data.value, &data.status);
+            // }
+
+            Event::Command(_) => {}
+            Event::Notification(_) => {}
+            _ => {}
+
+        }
+
         self.label.event(ctx, event, data, env)
     }
 
@@ -99,6 +68,9 @@ impl Widget<IndCand> for CandWidget {
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx, old_data: &IndCand, data: &IndCand, env: &Env) {
+        if old_data.status != data.status {
+            ctx.request_paint();
+        }
         self.label.update(ctx, old_data, data, env)
     }
 
@@ -108,6 +80,7 @@ impl Widget<IndCand> for CandWidget {
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &IndCand, env: &Env) {
         // Background color
+        dbg!("painting");
         let size = ctx.size();
         let rect = size.to_rect();
         ctx.fill(rect, &data.status.color());
@@ -116,7 +89,7 @@ impl Widget<IndCand> for CandWidget {
 }
 
 impl IndCand {
-    pub fn new(value: u8, status: CandStatus) -> IndCand {
+    pub fn new(value: u8, status: Status) -> IndCand {
 
         IndCand {
             value,

@@ -10,20 +10,17 @@ use data::AppState;
 
 mod view;
 use view::build_ui;
-use crate::data::Counter;
+use crate::data::{Cand};
 use druid::im::Vector;
-use crate::view::Cand;
+
 
 pub fn main() {
     let main_window = WindowDesc::new(build_ui)
         .title("Todo Tutorial")
         .window_size((400.0, 400.0));
 
-    let vec = vec![Counter{count:0}];
+
     let initial_state = AppState {
-        // first: "First".to_string(),
-        // second: "Second".to_string(),
-        // count: Vector::from(vec),
         cands: Cand::new(),
     };
 
