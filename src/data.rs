@@ -1,32 +1,22 @@
 use druid::{Lens, Data, Widget, Color};
 use druid::im::Vector;
 use std::ops::{Index, IndexMut};
+use std::rc::Rc;
+use rustoku::Sudoku;
 
 #[derive(Clone, Data, Lens)]
 pub struct AppState {
-    pub cands: Cand,
+    pub squares: Vector<Square>,
+    #[data(ignore)]
+    pub sud: Rc<Sudoku>,
 }
 
 #[derive(Clone, Data, Lens)]
-pub struct Cand {
-    pub values: Vector<IndCand>,
+pub struct Square {
+    pub value: String,
+    pub cands: Vector<IndCand>,
+    pub index: usize,
 }
-
-
-impl Index<usize> for Cand {
-    type Output = IndCand;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.values[index]
-    }
-}
-
-impl IndexMut<usize> for Cand {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.values[index]
-    }
-}
-
 
 #[derive(Clone, Data, Lens)]
 pub struct IndCand {
@@ -52,16 +42,37 @@ impl Status {
         }
     }
 }
-impl Cand {
-    pub fn new () -> Cand {
-        let v: Vec<IndCand> = (1..=9).into_iter().map(|i|
-            if i & 1 > 0 {
-                IndCand::new(i, Status::Active)
-            } else {
-                IndCand::new(i, Status::Inactive)
-            }).collect();
-        Cand {
-            values: v.into(),
-        }
-    }
-}
+// impl Cand {
+//     pub fn new (poss_fun: impl Fn((i32, i32)) -> Vec<u8>, row: i32, col: i32) -> Cand {
+//         let poss = poss_fun((row,col));
+//         let v: Vec<IndCand> = (1..=9).into_iter().map(|i|
+//             if poss.contains(&i) {
+//                 IndCand::new(i, Status::Active)
+//             } else {
+//                 IndCand::new(i, Status::Inactive)
+//             }).collect();
+//         Cand {
+//             values: v.into(),
+//         }
+//     }
+// }
+//
+// #[derive(Clone, Data, Lens)]
+// pub struct Cand {
+//     pub values: Vector<IndCand>,
+// }
+//
+//
+// impl Index<usize> for Cand {
+//     type Output = IndCand;
+//
+//     fn index(&self, index: usize) -> &Self::Output {
+//         &self.values[index]
+//     }
+// }
+//
+// impl IndexMut<usize> for Cand {
+//     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+//         &mut self.values[index]
+//     }
+// }

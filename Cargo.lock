@@ -87,6 +87,7 @@ dependencies = [
 [[package]]
 name = "bitset"
 version = "0.1.0"
+source = "git+https://github.com/timlikestacos/rustoku.git#9f025913e34c085c305d139df998d4cbd349f89b"
 
 [[package]]
 name = "block"
@@ -1087,6 +1088,7 @@ dependencies = [
 [[package]]
 name = "rustoku"
 version = "0.1.0"
+source = "git+https://github.com/timlikestacos/rustoku.git#9f025913e34c085c305d139df998d4cbd349f89b"
 dependencies = [
  "bitset",
 ]
