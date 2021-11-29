@@ -318,7 +318,6 @@ fn get_hint(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
 fn apply_hint (ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
 
     if let Some(themove) = data.active_hint.clone() {
-        dbg!(&themove);
         let themove = themove.apply(&mut data.sud);
         dbg!(&themove);
         clear_hint(ctx, data, env);
@@ -329,6 +328,8 @@ fn apply_hint (ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
 
 fn clear_hint(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     data.active_hint = None;
+    data.hint_name = "".to_owned();
+
     for mut square in data.squares.iter_mut() {
         for mut cand in square.cands.iter_mut() {
             if cand.status == Status::Involved || cand.status == Status::Removable {
