@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 
 #rustoku = { git = "https://github.com/timlikestacos/rustoku.git"}
-rustoku = { path = "../Sudoku-Solver/rustoku"}
+rustoku = { path = "../sudoku/rustoku"}
 
 [dependencies.druid]
 version = "0.7.0"

@@ -1,201 +1,69 @@
-use druid::{
-    widget::Label, BoxConstraints, Color, Command, Env, Event, EventCtx, LayoutCtx, LensExt,
-    LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext, Selector, Size, Target,
-    UpdateCtx, Widget, WidgetExt,
-};
 
 use crate::controller::GridController;
 use crate::data::*;
-use crate::selectors::{CAND_DESELECT, CAND_SELECT, CAND_SELECTED, CAND_VALUE};
+use crate::selectors::*;
 use druid::im::Vector;
-use druid::widget::{Align, Button, Container, CrossAxisAlignment, Either, Flex, FlexParams, List};
-use druid::{Data, Lens};
+use druid::widget::{Align, Button, Container, CrossAxisAlignment, Either, Flex, FlexParams, List, Label};
+use druid::{Data, Lens, LensExt, Widget, WidgetExt, Color, EventCtx, Env, Command, Target};
 use rustoku::{ChangeType, Move};
-use std::cell::{Cell, RefCell};
-use std::ops::{Deref, Index, IndexMut};
-use std::rc::Rc;
+use crate::candidate::CandWidget;
 
-pub fn build_ui() -> impl Widget<AppState> {
-    let mut flex = Flex::column();
-    flex.add_flex_child(build_grid(3), 1.0);
+const BOX_WIDTH: usize = 3;
+const GRID_WIDTH: usize = BOX_WIDTH * BOX_WIDTH;
+const SPACER: f64 = 0.15;
 
-    flex
-}
 
-pub struct CandWidget {
-    label: Align<IndCand>,
-}
+pub fn build_grid() -> impl Widget<AppState> {
 
-impl CandWidget {
-    pub fn new() -> CandWidget {
-        let label = Align::centered(
-            Label::new(|data: &IndCand, _: &_| {
-                if data.status == Status::Inactive {
-                    " ".to_string()
-                } else {
-                    data.value.to_string()
-                }
-            })
-            .with_text_size(11.)
-            .with_text_color(Color::WHITE),
-        );
-        CandWidget { label }
-    }
-}
-
-impl Widget<IndCand> for CandWidget {
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut IndCand, env: &Env) {
-        match event {
-            Event::MouseDown(m) => match m.button {
-                MouseButton::Left => {
-                    if data.status != Status::Inactive {
-                        let indexvalue = IndexValuePair::new(data.square_index, data.value);
-                        ctx.submit_notification(Command::new(
-                            CAND_SELECTED,
-                            indexvalue,
-                            Target::Auto,
-                        ));
-                    }
-                }
-                _ => (),
-            },
-
-            Event::Command(command) => {
-                dbg!(&data.status, &data.value);
-                if let Some(payload) = command.get(CAND_SELECT) {
-                    data.status = Status::Selected;
-                }
-                if let Some(payload) = command.get(CAND_DESELECT) {
-                    if data.status != Status::Inactive {
-                        data.status = Status::Active;
-                    }
-                }
-                dbg!(&data.status);
-                ctx.request_update();
-            }
-            Event::Notification(_) => {}
-            _ => {}
-        }
-
-        self.label.event(ctx, event, data, env)
-    }
-
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &IndCand, env: &Env) {
-        self.label.lifecycle(ctx, event, data, env)
-    }
-
-    fn update(&mut self, ctx: &mut UpdateCtx, old_data: &IndCand, data: &IndCand, env: &Env) {
-        if old_data.status != data.status {
-            ctx.request_paint();
-        }
-        self.label.update(ctx, old_data, data, env)
-    }
-
-    fn layout(
-        &mut self,
-        ctx: &mut LayoutCtx,
-        bc: &BoxConstraints,
-        data: &IndCand,
-        env: &Env,
-    ) -> Size {
-        self.label.layout(ctx, bc, data, env)
-    }
-
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &IndCand, env: &Env) {
-        // Background color
-        let size = ctx.size();
-        let rect = size.to_rect();
-        ctx.fill(rect, &data.status.color());
-        self.label.paint(ctx, data, env)
-    }
-}
-
-impl IndCand {
-    pub fn new(value: u8, status: Status, square_index: usize) -> IndCand {
-        IndCand {
-            value,
-            status,
-            square_index,
-        }
-    }
-}
-
-pub fn build_container(index: usize) -> impl Widget<Square> {
-    let mut overall = Flex::column();
-    for r in 0..3 {
-        let mut row = Flex::row();
-
-        for c in 0..3 {
-            let index = r * 3 + c;
-
-            let mut label = CandWidget::new().lens(Square::cands.index(index as usize));
-            row.add_flex_child(label, 1.0);
-        }
-        overall.add_flex_child(row, 1.0);
-    }
-    overall.border(Color::BLUE, 1.)
-}
-
-fn build_square(row: usize, col: usize, box_width: usize) -> impl Widget<Square> {
-    let index = row * 9 + col;
-
-    let either = Either::new(
-        |data: &Square, _env| data.value.len() > 0,
-        Label::raw().with_text_size(18.).lens(Square::value),
-        build_container(index),
-    );
-
-    Align::centered(either).border(Color::grey(0.50), 1.0)
-}
-
-fn build_grid(box_width: usize) -> impl Widget<AppState> {
-    let SPACER: f64 = 0.15;
-    let width = box_width * box_width;
+    // Title
     let display = Label::new("rustoku")
         .with_text_size(32.0)
         //.lens(CalcState::value)
-        .padding(5.0);
+        .padding(1.);
 
-    let mut column = Flex::column().with_flex_spacer(SPACER).with_child(display);
+    let mut column = Flex::column().with_flex_spacer(0.1).with_child(display);
 
-    for r in 0..width {
+    // Make the squares.  Add spacing to form the 3x3 boxes.
+    for r in 0..GRID_WIDTH {
         let mut row = Flex::row();
 
-        for c in 0..width {
-            let index = r * width + c;
-            if c % box_width == 0 && c != 0 {
+        for c in 0..GRID_WIDTH {
+            let index = r * GRID_WIDTH + c;
+            // Spacing to form boxes
+            if c % BOX_WIDTH == 0 && c != 0 {
                 row.add_flex_spacer(SPACER);
             }
 
             row.add_flex_child(
-                build_square(r, c, box_width).lens(AppState::squares.index(index)),
+                build_square().lens(AppState::squares.index(index)),
                 1.0,
             );
         }
 
-        if r % box_width == 0 && r != 0 {
+        if r % BOX_WIDTH == 0 && r != 0 {
             column.add_flex_spacer(SPACER);
         }
         column.add_flex_child(row, 1.0);
     }
 
-    // Buttons
-    let mut row = Flex::row();
+    // Control Buttons
+    let mut button_row = Flex::row();
     let setval = Button::new("Set Value").on_click(setval_button);
     let remove_pot = Button::new("Remove Candidate").on_click(remove_pot_button);
     let undo = Button::new("Undo").on_click(undo_last);
 
-    let param = FlexParams::new(1.0, CrossAxisAlignment::Center);
-    row.add_flex_child(Align::centered(setval), param);
-    row.add_flex_child(Align::centered(remove_pot), param);
-    row.add_flex_child(Align::centered(undo), param);
-    column.add_flex_child(row, 1.0);
+    button_row.add_flex_child(Align::centered(setval), 1.0);
+    button_row.add_flex_child(Align::centered(remove_pot), 1.0);
+    button_row.add_flex_child(Align::centered(undo), 1.0);
 
+    column.add_flex_child(button_row, 0.5);
+
+    // Hint buttons
     let mut hint_row = Flex::row();
     let hint_button = Align::centered(
         Button::dynamic(|data: &AppState, _: &_| {
             if data.active_hint.is_some() {
-                "Apply".to_string()
+                "Apply Hint".to_string()
             } else {
                 "Hint".to_string()
             }
@@ -207,28 +75,76 @@ fn build_grid(box_width: usize) -> impl Widget<AppState> {
     }));
 
     let clear_hint = Align::centered(Button::new("Clear Hint").on_click(clear_hint));
+
     hint_row.add_flex_child(hint_button, 1.0);
     hint_row.add_flex_child(clear_hint, 1.0);
     hint_row.add_flex_child(hint_title, 1.0);
 
-    column.add_flex_child(hint_row, 1.0);
+    column.add_flex_child(hint_row, 0.5);
+
     column.controller(GridController)
 }
 
-fn setval_button(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
-    let themove = data
-        .sud
-        .set(data.selectedPair.index, data.selectedPair.value)
-        .unwrap();
-    update_from_move(ctx, data, env, themove);
+fn build_square() -> impl Widget<Square> {
+
+    // If square has a value, set it to just a label.  If not, build square with candidates.
+    let either = Either::new(
+        |data: &Square, _env| data.value.len() > 0,
+        Label::raw().with_text_size(18.).lens(Square::value),
+        build_container(),
+    );
+
+    Align::centered(either).border(Color::grey(0.50), 1.0)
+}
+
+pub fn build_container() -> impl Widget<Square> {
+    let mut overall = Flex::column();
+    for r in 0..BOX_WIDTH {
+        let mut row = Flex::row();
+
+        for c in 0..BOX_WIDTH {
+            let index = r * BOX_WIDTH + c;
+            let mut label = CandWidget::new().lens(Square::cands.index(index as usize));
+            row.add_flex_child(label, 1.0);
+        }
+
+        overall.add_flex_child(row, 1.0);
+    }
+
+    overall
+}
+
+pub fn setval_button(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
+
+    // Do not allow any setting if more than one or zero candidates
+    if data.selected_pairs.len() == 1 {
+        let selected = data.selected_pairs.iter().next().unwrap();
+        let themove = data
+            .sud
+            .set(selected.index, selected.value)
+            .unwrap();
+
+        data.selected_pairs.clear();
+        update_from_move(ctx, data, env, themove);
+    }
+
 }
 
 fn remove_pot_button(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
-    let themove = data
-        .sud
-        .remove_potential(data.selectedPair.index, data.selectedPair.value)
-        .unwrap();
-    update_from_move(ctx, data, env, themove);
+
+    let mut moves = vec![];
+    for candidate in data.selected_pairs.iter() {
+        let themove = data
+            .sud
+            .remove_potential(candidate.index, candidate.value)
+            .unwrap();
+        moves.push(themove);
+    }
+    for amove in moves {
+        update_from_move(ctx, data, env, amove);
+    }
+    data.selected_pairs.clear();
+
 }
 
 fn undo_last(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
@@ -283,6 +199,8 @@ fn hint_button (ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
 fn get_hint(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     if let Some(themove) = data.solver.next(&data.sud) {
 
+        clear_selected_candidate(ctx, data, env);
+
         // show the involved candidates
         let involved = themove.involved_vec();
         for pair in involved {
@@ -318,23 +236,32 @@ fn get_hint(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
 fn apply_hint (ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
 
     if let Some(themove) = data.active_hint.clone() {
+
         let themove = themove.apply(&mut data.sud);
-        dbg!(&themove);
         clear_hint(ctx, data, env);
         update_from_move(ctx, data, env, themove)
     }
 
 }
 
-fn clear_hint(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
+pub fn clear_hint(_ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     data.active_hint = None;
     data.hint_name = "".to_owned();
 
-    for mut square in data.squares.iter_mut() {
+    for square in data.squares.iter_mut() {
         for mut cand in square.cands.iter_mut() {
             if cand.status == Status::Involved || cand.status == Status::Removable {
                 cand.status = Status::Active;
             }
         }
     }
+}
+
+pub fn clear_selected_candidate (ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
+
+    for selected in data.selected_pairs.iter() {
+        ctx.submit_command(Command::new(CAND_DESELECT, (), Target::Widget(selected.id)));
+    }
+    data.selected_pairs.clear();
+
 }
