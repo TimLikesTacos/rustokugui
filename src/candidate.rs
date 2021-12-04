@@ -1,7 +1,13 @@
+use crate::data::{AppState, CandidateInfo, IndCand, Status};
+use crate::selectors::{CAND_DESELECT, CAND_SELECT, CAND_SELECTED, SET_VALUE};
 use druid::widget::{Align, Label};
-use crate::data::{IndCand, Status, CandidateInfo};
-use druid::{Color, Widget, EventCtx, Env, Event, MouseButton, Command, Target, LifeCycle, LifeCycleCtx, UpdateCtx, LayoutCtx, BoxConstraints, Size, PaintCtx, RenderContext, WidgetId};
-use crate::selectors::{CAND_SELECTED, CAND_SELECT, CAND_DESELECT};
+use druid::{
+    BoxConstraints, Color, Command, ContextMenu, Env, Event, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, LocalizedString, MenuDesc, MenuItem, MouseButton, PaintCtx, Point, RenderContext,
+    Size, Target, UpdateCtx, Widget, WidgetExt, WidgetId,
+};
+
+use crate::view::setval_button;
 use std::error::Error;
 
 pub struct CandWidget {
@@ -18,8 +24,8 @@ impl CandWidget {
                     data.value.to_string()
                 }
             })
-                .with_text_size(11.)
-                .with_text_color(Color::WHITE),
+            .with_text_size(11.)
+            .with_text_color(Color::WHITE),
         );
         CandWidget { label }
     }
@@ -27,12 +33,13 @@ impl CandWidget {
 
 impl Widget<IndCand> for CandWidget {
     fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut IndCand, env: &Env) {
-
         match event {
             Event::MouseDown(m) => match m.button {
                 MouseButton::Left => {
                     if data.status != Status::Inactive {
-                        let indexvalue = CandidateInfo::new(data.square_index, data.value, ctx.widget_id());
+                        data.status = Status::Selected;
+                        let indexvalue =
+                            CandidateInfo::new(data.square_index, data.value, ctx.widget_id());
                         ctx.submit_notification(Command::new(
                             CAND_SELECTED,
                             indexvalue,
@@ -44,17 +51,12 @@ impl Widget<IndCand> for CandWidget {
             },
 
             Event::Command(command) => {
-
-                if let Some(_) = command.get(CAND_SELECT) {
-                    data.status = Status::Selected;
-                }
                 if let Some(_) = command.get(CAND_DESELECT) {
                     if data.status == Status::Selected {
                         data.status = Status::Active;
                     }
+                    ctx.request_update();
                 }
-
-                ctx.request_update();
             }
 
             _ => {}
@@ -93,4 +95,3 @@ impl Widget<IndCand> for CandWidget {
         self.label.paint(ctx, data, env)
     }
 }
-

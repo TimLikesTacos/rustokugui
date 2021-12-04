@@ -1,15 +1,18 @@
 use druid::im::Vector;
 use druid::{Color, Data, Lens, Widget, WidgetId};
-use rustoku::{HumanSolve, Sudoku, Move, SudError};
-use std::ops::{Index, IndexMut};
-use std::rc::Rc;
+use rustoku::{HumanSolve, Move, SudError, Sudoku};
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
+use std::ops::{Index, IndexMut};
+use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Clone, Data, Lens)]
 pub struct AppState {
     pub squares: Vector<Square>,
-    pub hint_name: String,
+    pub hint_name: Arc<String>,
+    pub original_string: Arc<String>,
+    pub error_msg: Arc<String>,
     #[data(ignore)]
     pub multi_select: bool,
     #[data(ignore)]
@@ -23,13 +26,13 @@ pub struct AppState {
 }
 
 impl AppState {
-    fn new(input: &str) -> Self {
+    pub(crate) fn new(input: &str) -> Self {
         if let Ok(sudoku) = Sudoku::new(input) {
             // Validate the puzzle
             if let Err(error) = sudoku.validate() {
                 match error {
                     SudError::MultipleSolution(_) => (), // this app will allow multiple solutions
-                    _ => return AppState::default() // any invalid puzzle, return the default puzzle.
+                    _ => return AppState::default(), // any invalid puzzle, return the default puzzle.
                 }
             }
 
@@ -70,26 +73,27 @@ impl AppState {
             AppState {
                 squares,
                 sud: sudoku,
+                original_string: Arc::new(String::default()),
+                error_msg: Arc::new(String::default()),
                 selected_pairs: HashSet::new(),
                 multi_select: false,
                 active_hint: None,
-                hint_name: "".to_owned(),
+                hint_name: String::default().into(),
                 solver: HumanSolve::new(),
             }
-
         } else {
             AppState::default()
         }
     }
-
-
 }
 
 impl Default for AppState {
     fn default() -> Self {
         // This is a known good valid puzzle.  If this string is replaced with an invalid puzzle, there will be
         // an infinite loop between `.new()` and `.default()`
-        AppState::new(".28..7....16.83.7.....2.85113729.......73........463.729..7.......86.14....3..7..")
+        AppState::new(
+            ".28..7....16.83.7.....2.85113729.......73........463.729..7.......86.14....3..7..",
+        )
     }
 }
 
@@ -112,7 +116,6 @@ impl CandidateInfo {
         CandidateInfo { index, value, id }
     }
 }
-
 
 #[derive(Clone, Data, Lens)]
 pub struct Square {

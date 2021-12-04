@@ -1,20 +1,22 @@
-
+use crate::candidate::CandWidget;
 use crate::controller::GridController;
 use crate::data::*;
 use crate::selectors::*;
 use druid::im::Vector;
-use druid::widget::{Align, Button, Container, CrossAxisAlignment, Either, Flex, FlexParams, List, Label};
-use druid::{Data, Lens, LensExt, Widget, WidgetExt, Color, EventCtx, Env, Command, Target};
-use rustoku::{ChangeType, Move};
-use crate::candidate::CandWidget;
+use druid::widget::{
+    Align, Button, Container, CrossAxisAlignment, Either, Flex, FlexParams, Label, LabelText, List,
+    MainAxisAlignment, TextBox,
+};
+use druid::{
+    Color, Command, Data, Env, EventCtx, Lens, LensExt, Target, UnitPoint, Widget, WidgetExt,
+};
+use rustoku::{ChangeType, Move, SudError, Sudoku};
 
 const BOX_WIDTH: usize = 3;
 const GRID_WIDTH: usize = BOX_WIDTH * BOX_WIDTH;
 const SPACER: f64 = 0.15;
 
-
 pub fn build_grid() -> impl Widget<AppState> {
-
     // Title
     let display = Label::new("rustoku")
         .with_text_size(32.0)
@@ -34,16 +36,13 @@ pub fn build_grid() -> impl Widget<AppState> {
                 row.add_flex_spacer(SPACER);
             }
 
-            row.add_flex_child(
-                build_square().lens(AppState::squares.index(index)),
-                1.0,
-            );
+            row.add_flex_child(build_square().lens(AppState::squares.index(index)), 1.0);
         }
 
         if r % BOX_WIDTH == 0 && r != 0 {
             column.add_flex_spacer(SPACER);
         }
-        column.add_flex_child(row, 1.0);
+        column.add_flex_child(row.controller(GridController), 1.0);
     }
 
     // Control Buttons
@@ -58,7 +57,7 @@ pub fn build_grid() -> impl Widget<AppState> {
 
     column.add_flex_child(button_row, 0.5);
 
-    // Hint buttons
+    //Hint buttons
     let mut hint_row = Flex::row();
     let hint_button = Align::centered(
         Button::dynamic(|data: &AppState, _: &_| {
@@ -71,7 +70,7 @@ pub fn build_grid() -> impl Widget<AppState> {
         .on_click(hint_button),
     );
     let hint_title = Align::centered(Label::dynamic(|data: &AppState, _: &_| {
-        data.hint_name.clone()
+        data.hint_name.to_string()
     }));
 
     let clear_hint = Align::centered(Button::new("Clear Hint").on_click(clear_hint));
@@ -82,11 +81,23 @@ pub fn build_grid() -> impl Widget<AppState> {
 
     column.add_flex_child(hint_row, 0.5);
 
-    column.controller(GridController)
+    column.add_flex_child(build_manual_section(), 1.0);
+
+    column.add_flex_child(
+        Flex::row().with_flex_child(
+            Label::raw()
+                .with_text_size(12.)
+                .with_text_color(Color::RED)
+                .lens(AppState::error_msg),
+            1.0,
+        ),
+        1.0,
+    );
+
+    column
 }
 
 fn build_square() -> impl Widget<Square> {
-
     // If square has a value, set it to just a label.  If not, build square with candidates.
     let either = Either::new(
         |data: &Square, _env| data.value.len() > 0,
@@ -114,24 +125,61 @@ pub fn build_container() -> impl Widget<Square> {
     overall
 }
 
-pub fn setval_button(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
+fn build_manual_section() -> impl Widget<AppState> {
+    let mut container = Flex::row();
+    let mut col = Flex::column();
+    let label = Align::vertical(
+        UnitPoint::LEFT,
+        Label::new("Enter a valid puzzle string: ").with_text_size(11.),
+    );
+    let submit = Align::centered(Button::new("Import Puzzle").on_click(validate_import));
+    let manual = Flex::row().with_child(label).with_child(submit);
+    let mut textbox = Align::vertical(
+        UnitPoint::LEFT,
+        TextBox::new()
+            .with_text_size(14.0)
+            .with_placeholder("Enter your puzzle string here".to_string())
+            .expand_width()
+            .lens(AppState::original_string),
+    );
+    col.add_flex_child(manual, 0.8);
+    col.add_flex_child(textbox, 0.8);
 
+    container.add_flex_child(col, 1.0);
+    container
+}
+
+fn validate_import(ctx: &mut EventCtx, data: &mut AppState, _env: &Env) {
+    if data.original_string.len() != 81 {
+        data.error_msg = format!(
+            "There are only {} characters, not 81",
+            data.original_string.len()
+        )
+            .into();
+        ctx.set_handled()
+    } else {
+        match Sudoku::new(data.original_string.as_str()) {
+            Ok(sud) => match sud.validate() {
+                Ok(_) => *data = AppState::new(&data.original_string),
+                Err(e) => data.error_msg = e.to_string().into(),
+            },
+            Err(e) => data.error_msg = e.to_string().into(),
+        }
+    }
+}
+
+pub fn setval_button(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     // Do not allow any setting if more than one or zero candidates
     if data.selected_pairs.len() == 1 {
         let selected = data.selected_pairs.iter().next().unwrap();
-        let themove = data
-            .sud
-            .set(selected.index, selected.value)
-            .unwrap();
+        let themove = data.sud.set(selected.index, selected.value).unwrap();
 
         data.selected_pairs.clear();
         update_from_move(ctx, data, env, themove);
     }
-
 }
 
-fn remove_pot_button(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
-
+pub fn remove_pot_button(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     let mut moves = vec![];
     for candidate in data.selected_pairs.iter() {
         let themove = data
@@ -144,7 +192,6 @@ fn remove_pot_button(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
         update_from_move(ctx, data, env, amove);
     }
     data.selected_pairs.clear();
-
 }
 
 fn undo_last(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
@@ -188,7 +235,7 @@ fn update_from_move(ctx: &mut EventCtx, data: &mut AppState, _env: &Env, themove
     ctx.request_update();
 }
 
-fn hint_button (ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
+fn hint_button(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     if data.active_hint.is_some() {
         apply_hint(ctx, data, env)
     } else {
@@ -198,7 +245,6 @@ fn hint_button (ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
 
 fn get_hint(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     if let Some(themove) = data.solver.next(&data.sud) {
-
         clear_selected_candidate(ctx, data, env);
 
         // show the involved candidates
@@ -226,27 +272,24 @@ fn get_hint(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
 
         // Set active
 
-        data.hint_name = themove.technique().to_string();
+        data.hint_name = themove.technique().to_string().into();
         data.active_hint = Some(themove);
 
         ctx.request_update();
     }
 }
 
-fn apply_hint (ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
-
+fn apply_hint(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     if let Some(themove) = data.active_hint.clone() {
-
         let themove = themove.apply(&mut data.sud);
         clear_hint(ctx, data, env);
         update_from_move(ctx, data, env, themove)
     }
-
 }
 
 pub fn clear_hint(_ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     data.active_hint = None;
-    data.hint_name = "".to_owned();
+    data.hint_name = "".to_string().into();
 
     for square in data.squares.iter_mut() {
         for mut cand in square.cands.iter_mut() {
@@ -257,11 +300,9 @@ pub fn clear_hint(_ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     }
 }
 
-pub fn clear_selected_candidate (ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
-
+pub fn clear_selected_candidate(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     for selected in data.selected_pairs.iter() {
         ctx.submit_command(Command::new(CAND_DESELECT, (), Target::Widget(selected.id)));
     }
     data.selected_pairs.clear();
-
 }

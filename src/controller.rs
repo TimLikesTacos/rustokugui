@@ -1,8 +1,11 @@
 use crate::data::{AppState, CandidateInfo, Square, Status};
 use crate::selectors::*;
-use druid::widget::Controller;
-use druid::{Command, Env, Event, EventCtx, LifeCycle, LifeCycleCtx, MouseButton, Notification, Selector, Target, UpdateCtx, Widget, WidgetId, KbKey};
 use crate::view::{clear_hint, setval_button};
+use druid::widget::{Align, Controller, Flex, TextBox};
+use druid::{
+    Command, Env, Event, EventCtx, KbKey, LifeCycle, LifeCycleCtx, MouseButton, Notification,
+    Selector, Target, UpdateCtx, Widget, WidgetExt, WidgetId, WindowDesc,
+};
 
 pub struct GridController;
 
@@ -15,7 +18,6 @@ impl<W: Widget<AppState>> Controller<AppState, W> for GridController {
         data: &mut AppState,
         env: &Env,
     ) {
-
         if !ctx.has_focus() {
             if ctx.is_hot() {
                 ctx.request_focus();
@@ -23,18 +25,13 @@ impl<W: Widget<AppState>> Controller<AppState, W> for GridController {
         }
 
         match event {
-
-            Event::KeyDown(keyevent) if keyevent.key == KbKey::Control =>  {
+            Event::KeyDown(keyevent) if keyevent.key == KbKey::Control => {
                 data.multi_select = true;
-            },
+            }
 
             Event::KeyUp(keyevent) if keyevent.key == KbKey::Control => {
                 data.multi_select = false;
-            },
-
-            Event::KeyDown(key) => {
-                dbg!("key");
-            },
+            }
 
             Event::Notification(notice) => {
                 if let Some(indexvalue) = notice.get(CAND_SELECTED) {
@@ -52,15 +49,19 @@ impl<W: Widget<AppState>> Controller<AppState, W> for GridController {
                         }
                     }
                     // Double- click. Sets the value. Same thing as clicking the set value button
-                    else if data.selected_pairs.len() == 1 && data.selected_pairs.contains(indexvalue) {
+                    else if data.selected_pairs.len() == 1
+                        && data.selected_pairs.contains(indexvalue)
+                    {
                         setval_button(ctx, data, env);
                     } else {
                         data.selected_pairs.clear();
                         data.selected_pairs.insert(indexvalue.clone());
                     }
+                    ctx.set_handled();
                 }
-                ctx.set_handled();
             }
+
+            Event::MouseMove(_) => ctx.set_handled(), // Done to ignore these events
             _ => (),
         }
 
@@ -75,61 +76,27 @@ impl<W: Widget<AppState>> Controller<AppState, W> for GridController {
         data: &AppState,
         env: &Env,
     ) {
-        
         // Update selected candidate
         if data.selected_pairs != old_data.selected_pairs {
             // Clicked on inactive cand or box will deactive any selected candidate
 
-            let selected: Vec<_> = data.selected_pairs.difference(&old_data.selected_pairs).collect();
+            let selected: Vec<_> = data
+                .selected_pairs
+                .difference(&old_data.selected_pairs)
+                .collect();
             for select in selected {
-                ctx.submit_command(Command::new(
-                    CAND_SELECT,
-                    (),
-                    Target::Widget(select.id),
-                ));
+                ctx.submit_command(Command::new(CAND_SELECT, (), Target::Widget(select.id)));
             }
 
-            let unselected: Vec<_> = old_data.selected_pairs.difference(&data.selected_pairs).collect();
+            let unselected: Vec<_> = old_data
+                .selected_pairs
+                .difference(&data.selected_pairs)
+                .collect();
             for unselect in unselected {
-                ctx.submit_command(Command::new(
-                    CAND_DESELECT,
-                    (),
-                    Target::Widget(unselect.id),
-                ));
+                ctx.submit_command(Command::new(CAND_DESELECT, (), Target::Widget(unselect.id)));
             }
-            // if data.selected_pairs.is_some() {
-            //     ctx.submit_command(Command::new(
-            //         CAND_SELECT,
-            //         (),
-            //         Target::Widget(data.selected_id),
-            //     ));
-            // }
-            //
-            //
-            // // Activate first, deactivate second. This allows deactivation if the selected cand is clicked.
-            // if old_data.selected_pairs.is_some() {
-            //     ctx.submit_command(Command::new(
-            //         CAND_DESELECT,
-            //         (),
-            //         Target::Widget(old_data.selected_id),
-            //     ));
-            // }
 
         }
         child.update(ctx, old_data, data, env)
     }
 }
-
-// pub struct SquareController {}
-//
-// impl <W: Widget<Square>>Controller<Square, W> for SquareController{
-//     fn event(&mut self, child: &mut W, ctx: &mut EventCtx, event: &Event, data: &mut Square, env: &Env) {
-//
-//         match event {
-//             _ => (),
-//
-//         }
-//
-//         child.event(ctx, event, data, env)
-//     }
-// }
