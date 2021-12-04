@@ -1,14 +1,14 @@
-use crate::data::{AppState, CandidateInfo, IndCand, Status};
-use crate::selectors::{CAND_DESELECT, CAND_SELECT, CAND_SELECTED, SET_VALUE};
+use crate::data::{CandidateInfo, IndCand, Status};
+use crate::selectors::{CAND_DESELECT, CAND_SELECTED};
 use druid::widget::{Align, Label};
 use druid::{
-    BoxConstraints, Color, Command, ContextMenu, Env, Event, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, LocalizedString, MenuDesc, MenuItem, MouseButton, PaintCtx, Point, RenderContext,
-    Size, Target, UpdateCtx, Widget, WidgetExt, WidgetId,
+    BoxConstraints, Color, Command, Env, Event, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, MouseButton, PaintCtx, RenderContext,
+    Size, Target, UpdateCtx, Widget,
 };
 
-use crate::view::setval_button;
-use std::error::Error;
+
+
 
 pub struct CandWidget {
     label: Align<IndCand>,

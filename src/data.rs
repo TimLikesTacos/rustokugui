@@ -1,10 +1,9 @@
 use druid::im::Vector;
-use druid::{Color, Data, Lens, Widget, WidgetId};
+use druid::{Color, Data, Lens, WidgetId};
 use rustoku::{HumanSolve, Move, SudError, Sudoku};
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
-use std::ops::{Index, IndexMut};
-use std::rc::Rc;
+
 use std::sync::Arc;
 
 #[derive(Clone, Data, Lens)]
@@ -105,6 +104,7 @@ pub struct CandidateInfo {
     pub id: WidgetId,
 }
 
+#[allow(clippy::derive_hash_xor_eq)]
 impl Hash for CandidateInfo {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.id.hash(state);

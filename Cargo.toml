@@ -2,7 +2,7 @@
 name = "rustoku_gui"
 version = "0.1.0"
 description = "A GUI application of the Rustoku library"
-author = "Timothy Reed <thetimmyreed@gmail.com>"
+authors = ["Timothy Reed <thetimmyreed@gmail.com>"]
 edition = "2018"
 readme = "README.md"
 repository = "https://github.com/timlikestacos/sudokugui.git"

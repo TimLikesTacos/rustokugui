@@ -2,15 +2,14 @@ use crate::candidate::CandWidget;
 use crate::controller::GridController;
 use crate::data::*;
 use crate::selectors::*;
-use druid::im::Vector;
+
 use druid::widget::{
-    Align, Button, Container, CrossAxisAlignment, Either, Flex, FlexParams, Label, LabelText, List,
-    MainAxisAlignment, TextBox,
+    Align, Button, Either, Flex, Label, TextBox,
 };
 use druid::{
-    Color, Command, Data, Env, EventCtx, Lens, LensExt, Target, UnitPoint, Widget, WidgetExt,
+    Color, Command, Env, EventCtx, LensExt, Target, UnitPoint, Widget, WidgetExt,
 };
-use rustoku::{ChangeType, Move, SudError, Sudoku};
+use rustoku::{ChangeType, Move, Sudoku};
 
 const BOX_WIDTH: usize = 3;
 const GRID_WIDTH: usize = BOX_WIDTH * BOX_WIDTH;
@@ -100,7 +99,7 @@ pub fn build_grid() -> impl Widget<AppState> {
 fn build_square() -> impl Widget<Square> {
     // If square has a value, set it to just a label.  If not, build square with candidates.
     let either = Either::new(
-        |data: &Square, _env| data.value.len() > 0,
+        |data: &Square, _env| data.value != 0,
         Label::raw().with_text_size(18.).lens(Square::value),
         build_container(),
     );
@@ -115,7 +114,7 @@ pub fn build_container() -> impl Widget<Square> {
 
         for c in 0..BOX_WIDTH {
             let index = r * BOX_WIDTH + c;
-            let mut label = CandWidget::new().lens(Square::cands.index(index as usize));
+            let label = CandWidget::new().lens(Square::cands.index(index as usize));
             row.add_flex_child(label, 1.0);
         }
 
@@ -134,7 +133,7 @@ fn build_manual_section() -> impl Widget<AppState> {
     );
     let submit = Align::centered(Button::new("Import Puzzle").on_click(validate_import));
     let manual = Flex::row().with_child(label).with_child(submit);
-    let mut textbox = Align::vertical(
+    let textbox = Align::vertical(
         UnitPoint::LEFT,
         TextBox::new()
             .with_text_size(14.0)
@@ -287,7 +286,7 @@ fn apply_hint(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     }
 }
 
-pub fn clear_hint(_ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
+pub fn clear_hint(_ctx: &mut EventCtx, data: &mut AppState, _env: &Env) {
     data.active_hint = None;
     data.hint_name = "".to_string().into();
 
@@ -300,7 +299,7 @@ pub fn clear_hint(_ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     }
 }
 
-pub fn clear_selected_candidate(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
+pub fn clear_selected_candidate(ctx: &mut EventCtx, data: &mut AppState, _env: &Env) {
     for selected in data.selected_pairs.iter() {
         ctx.submit_command(Command::new(CAND_DESELECT, (), Target::Widget(selected.id)));
     }

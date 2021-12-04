@@ -1,8 +1,8 @@
 #![windows_subsystem = "windows"]
 
 use druid::{
-    AppLauncher, LocalizedString, MenuDesc, MenuItem, Target, Widget, WidgetId,
-    WindowDesc, WindowId,
+    AppLauncher, LocalizedString, MenuDesc,
+    WindowDesc,
 };
 
 mod data;
@@ -13,9 +13,9 @@ mod controller;
 mod selectors;
 mod view;
 
-use crate::selectors::{CAND_SELECT, NEW_PUZZLE};
+
 use crate::view::build_grid;
-use druid::text::movement::Movement::EndOfDocument;
+
 
 pub fn main() {
     let main_window = WindowDesc::new(build_grid)

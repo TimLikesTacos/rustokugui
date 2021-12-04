@@ -1,10 +1,9 @@
-use crate::data::{AppState, CandidateInfo, Square, Status};
+use crate::data::{AppState};
 use crate::selectors::*;
 use crate::view::{clear_hint, setval_button};
-use druid::widget::{Align, Controller, Flex, TextBox};
+use druid::widget::{Controller};
 use druid::{
-    Command, Env, Event, EventCtx, KbKey, LifeCycle, LifeCycleCtx, MouseButton, Notification,
-    Selector, Target, UpdateCtx, Widget, WidgetExt, WidgetId, WindowDesc,
+    Command, Env, Event, EventCtx, KbKey, Target, UpdateCtx, Widget,
 };
 
 pub struct GridController;
