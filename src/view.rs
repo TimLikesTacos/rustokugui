@@ -99,9 +99,10 @@ pub fn build_grid() -> impl Widget<AppState> {
 fn build_square() -> impl Widget<Square> {
     // If square has a value, set it to just a label.  If not, build square with candidates.
     let either = Either::new(
-        |data: &Square, _env| data.value != 0,
-        Label::raw().with_text_size(18.).lens(Square::value),
+        |data: &Square, _env| data.value.is_empty(),
         build_container(),
+        Label::raw().with_text_size(18.).lens(Square::value),
+
     );
 
     Align::centered(either).border(Color::grey(0.50), 1.0)
