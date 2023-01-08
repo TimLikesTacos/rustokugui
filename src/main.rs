@@ -15,7 +15,7 @@ mod view;
 
 
 use crate::view::build_grid;
-
+use rustoku::basic::*;
 
 pub fn main() {
     let main_window = WindowDesc::new(build_grid)

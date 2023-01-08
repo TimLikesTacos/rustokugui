@@ -3,19 +3,19 @@ name = "rustoku_gui"
 version = "0.1.0"
 description = "A GUI application of the Rustoku library"
 authors = ["Timothy Reed <thetimmyreed@gmail.com>"]
-edition = "2018"
+edition = "2021"
 readme = "README.md"
-repository = "https://github.com/timlikestacos/sudokugui.git"
-license = "Apache-2.0"
-keywords = ["sudoku, rustoku, gui"]
-publish = false
+repository = "https://github.com/TimLikesTacos/rustokugui.git"
+license = "MIT"
+keywords = ["sudoku", "rustoku", "gui"]
+publish = true
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 
-rustoku = { git = "https://github.com/timlikestacos/rustoku.git"}
+rustoku = "0.1.0"
 
 [dependencies.druid]
 version = "0.7.0"

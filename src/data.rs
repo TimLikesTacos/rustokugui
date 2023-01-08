@@ -1,6 +1,7 @@
 use druid::im::Vector;
 use druid::{Color, Data, Lens, WidgetId};
-use rustoku::{HumanSolve, Move, SudError, Sudoku};
+use crate::*;
+use rustoku::SudError;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 
@@ -17,18 +18,18 @@ pub struct AppState {
     #[data(ignore)]
     pub selected_pairs: HashSet<CandidateInfo>,
     #[data(ignore)]
-    pub active_hint: Option<Move>,
+    pub active_hint: Option<Hint>,
     #[data(ignore)]
     pub sud: Sudoku,
     #[data(ignore)]
-    pub solver: HumanSolve,
+    pub solver: HumanSolver,
 }
 
 impl AppState {
     pub(crate) fn new(input: &str) -> Self {
         if let Ok(sudoku) = Sudoku::new(input) {
             // Validate the puzzle
-            if let Err(error) = sudoku.validate() {
+            if let Err(error) = sudoku.unique_solution() {
                 match error {
                     SudError::MultipleSolution(_) => (), // this app will allow multiple solutions
                     _ => return AppState::default(), // any invalid puzzle, return the default puzzle.
@@ -37,11 +38,11 @@ impl AppState {
 
             let squares = sudoku
                 .value_iter()
-                .zip(sudoku.possibilities_iter())
                 .enumerate()
-                .map(|(i, (v, p))| {
+                .map(|(i, v)| {
+                    let p = sudoku.possibilities(i).unwrap();
                     let mut vec: Vector<IndCand> = Vector::new();
-                    for x in 1..=9u8 {
+                    for x in 1..=9u16 {
                         let ind = if p.contains(&x) {
                             IndCand {
                                 value: x,
@@ -78,7 +79,7 @@ impl AppState {
                 multi_select: false,
                 active_hint: None,
                 hint_name: String::default().into(),
-                solver: HumanSolve::new(),
+                solver: HumanSolver::new(),
             }
         } else {
             AppState::default()
@@ -101,7 +102,7 @@ impl Default for AppState {
 #[derive(Clone, Data, Debug, PartialEq, Eq)]
 pub struct CandidateInfo {
     pub index: usize,
-    pub value: u8,
+    pub value: u16,
     #[data(ignore)]
     pub id: WidgetId,
 }
@@ -114,7 +115,7 @@ impl Hash for CandidateInfo {
 }
 
 impl CandidateInfo {
-    pub fn new(index: usize, value: u8, id: WidgetId) -> CandidateInfo {
+    pub fn new(index: usize, value: u16, id: WidgetId) -> CandidateInfo {
         CandidateInfo { index, value, id }
     }
 }
@@ -127,7 +128,7 @@ pub struct Square {
 
 #[derive(Clone, Data, Lens)]
 pub struct IndCand {
-    pub value: u8,
+    pub value: u16,
     pub status: Status,
     pub square_index: usize,
 }

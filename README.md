@@ -9,7 +9,7 @@ The focus of the [Rustoku library](https://github.com/timlikestacos/rustoku) is 
 to accomplish this, the focus is on potential candidates for each square.  Therefore, this application is 
 developed around this focus.  Candidates are automatically populated and controlled 
 
-
+Available [here](https://crates.io/crates/rustoku) on crates.io
 
 ## Screenshots 
 
@@ -31,7 +31,8 @@ Clicking on a candidate will highlight that candidate.
 
 Clicking again on the highlighted candidate will set the square to that value.  You can also click on `Set Value`.
 
-Clicking on `Remove Candidate` will remove the highlighted candidate from the board. 
+Clicking on `Remove Candidate` will remove the highlighted candidate from the board.   
+Holding down `Ctrl` will allow selecting multiple candidates at a time.  
 
 `Undo` will undo the last move, wether it was setting a value, removing a potential candidate, or applying a hint.  
 

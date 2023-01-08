@@ -9,7 +9,8 @@ use druid::widget::{
 use druid::{
     Color, Command, Env, EventCtx, LensExt, Target, UnitPoint, Widget, WidgetExt,
 };
-use rustoku::{ChangeType, Move, Sudoku};
+use rustoku::Technique;
+use crate::{ Move, Sudoku};
 
 const BOX_WIDTH: usize = 3;
 const GRID_WIDTH: usize = BOX_WIDTH * BOX_WIDTH;
@@ -159,7 +160,7 @@ fn validate_import(ctx: &mut EventCtx, data: &mut AppState, _env: &Env) {
         ctx.set_handled()
     } else {
         match Sudoku::new(data.original_string.as_str()) {
-            Ok(sud) => match sud.validate() {
+            Ok(sud) => match sud.unique_solution() {
                 Ok(_) => *data = AppState::new(&data.original_string),
                 Err(e) => data.error_msg = e.to_string().into(),
             },
@@ -172,7 +173,7 @@ pub fn setval_button(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
     // Do not allow any setting if more than one or zero candidates
     if data.selected_pairs.len() == 1 {
         let selected = data.selected_pairs.iter().next().unwrap();
-        let themove = data.sud.set(selected.index, selected.value).unwrap();
+        let themove = data.sud.set(selected.index, selected.value).unwrap().clone();
 
         data.selected_pairs.clear();
         update_from_move(ctx, data, env, themove);
@@ -199,37 +200,31 @@ fn undo_last(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
         clear_hint(ctx, data, env);
     }
     if let Some(last_move) = data.sud.undo() {
-        let changes = last_move.changes_vec();
-        for change in changes {
-            match change {
-                ChangeType::SetValue(v) => {
-                    data.squares[v.index()].value = "".to_string();
-                }
-                ChangeType::RemovedPot(v) => {
-                    let values: Vec<usize> = v.values();
-                    for value in values {
-                        data.squares[v.index()].cands[value - 1].status = Status::Active;
-                    }
-                }
+        if let Some(change) = last_move.change() {
+            data.squares[change.index().into()].value = "".to_string();
+        }
+
+        for pot in last_move.removed_potentials() {
+
+            let values: &Vec<u16> = pot.value();
+            for value in values {
+                data.squares[pot.index().into()].cands[*value as usize - 1].status = Status::Active;
             }
         }
+
         ctx.request_update();
     }
 }
 
 fn update_from_move(ctx: &mut EventCtx, data: &mut AppState, _env: &Env, themove: Move) {
-    let changes = themove.changes_vec();
-    for change in changes {
-        match change {
-            ChangeType::SetValue(v) => {
-                data.squares[v.index()].value = v.values::<u8, Vec<u8>>()[0].to_string();
-            }
-            ChangeType::RemovedPot(v) => {
-                let values: Vec<usize> = v.values();
-                for value in values {
-                    data.squares[v.index()].cands[value - 1].status = Status::Inactive;
-                }
-            }
+    if let Some(change) = themove.change() {
+        data.squares[change.index().into()].value = change.value().to_string();
+    }
+
+    for pot in themove.removed_potentials() {
+        let values: Vec<u16> = pot.value().clone();
+        for value in values {
+            data.squares[pot.index().into()].cands[value as usize - 1].status = Status::Inactive;
         }
     }
     ctx.request_update();
@@ -248,31 +243,27 @@ fn get_hint(ctx: &mut EventCtx, data: &mut AppState, env: &Env) {
         clear_selected_candidate(ctx, data, env);
 
         // show the involved candidates
-        let involved = themove.involved_vec();
+        let involved = themove.involved_values();
         for pair in involved {
-            let values: Vec<usize> = pair.values();
+            let values = pair.value().clone();
             for value in values {
-                data.squares[pair.index()].cands[value - 1].status = Status::Involved;
+                data.squares[pair.index().into()].cands[value as usize - 1].status = Status::Involved;
             }
         }
 
-        // show the candiates that can be set or removed
-        let changes = themove.changes_vec();
-        for change in changes {
-            let pair = match change {
-                ChangeType::SetValue(p) => p,
-                ChangeType::RemovedPot(p) => p,
-            };
+        if let Some(change) = themove.change() {
+            data.squares[change.index().into()].cands[*change.value() as usize - 1].status = Status::Removable;
+        }
 
-            let values: Vec<usize> = pair.values();
-            for value in values {
-                data.squares[pair.index()].cands[value - 1].status = Status::Removable;
+        for pair in themove.removed_potentials() {
+            for value in pair.value() {
+                data.squares[pair.index().into()].cands[*value as usize - 1].status = Status::Removable;
             }
         }
 
         // Set active
 
-        data.hint_name = themove.technique().to_string().into();
+        data.hint_name = themove.technique().unwrap_or(Technique::Guess).to_string().into();
         data.active_hint = Some(themove);
 
         ctx.request_update();

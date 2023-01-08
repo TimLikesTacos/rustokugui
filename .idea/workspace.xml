@@ -10,14 +10,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f6ce3a6e-dcf2-4f38-9748-0dab414cd2e8" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/candidate.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/candidate.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controller.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/controller.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/data.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/data.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/selectors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/selectors.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/view.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/view.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -38,6 +34,14 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="girr8e5f" />
   </component>
@@ -57,11 +61,17 @@
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../druid/druid/examples" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="nodejs_package_manager_path" value="npm" />
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
     <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
   </component>
   <component name="RunManager">
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="Run" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
       <option name="command" value="run" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -110,6 +120,25 @@
       <workItem from="1638228548480" duration="6959000" />
       <workItem from="1638235686484" duration="163000" />
       <workItem from="1638301440720" duration="20869000" />
+      <workItem from="1668225915320" duration="137000" />
+      <workItem from="1668226069888" duration="17000" />
+      <workItem from="1673136264485" duration="111000" />
+      <workItem from="1673136537624" duration="155000" />
+      <workItem from="1673136795414" duration="4053000" />
+      <workItem from="1673142037710" duration="502000" />
+      <workItem from="1673153730698" duration="10000" />
+      <workItem from="1673209491774" duration="175000" />
+      <workItem from="1673211044574" duration="992000" />
+      <workItem from="1673213017526" duration="641000" />
+      <workItem from="1673222217586" duration="189000" />
+      <workItem from="1673225767423" duration="595000" />
+      <workItem from="1673322250011" duration="24000" />
+      <workItem from="1673407729405" duration="308000" />
+      <workItem from="1673494014519" duration="187000" />
+      <workItem from="1673578107544" duration="755000" />
+      <workItem from="1674226427493" duration="594000" />
+      <workItem from="1674423368015" duration="2667000" />
+      <workItem from="1674520177041" duration="760000" />
     </task>
     <servers />
   </component>
@@ -126,5 +155,6 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
 </project>
